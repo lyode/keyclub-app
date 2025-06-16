@@ -1,764 +1,599 @@
-import React, { useState, useEffect } from 'react';
-import { Users, Calendar, Gift, CreditCard, Bell, CheckCircle, Clock, Star, Plus, Search, Edit, Trash2, Phone, Mail, MapPin, TrendingUp, Award, AlertCircle, Download } from 'lucide-react';
-
-const MembershipManagementSystem = () => {
-  const [activeTab, setActiveTab] = useState('activation');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedMember, setSelectedMember] = useState(null);
-  const [showMemberDetails, setShowMemberDetails] = useState(false);
-  
-  const [members, setMembers] = useState([
-    {
-      id: 'M001',
-      name: 'Sarah Chen',
-      phone: '+60123456789',
-      email: 'sarah@email.com',
-      address: 'Shah Alam, Selangor',
-      joinDate: '2024-01-15',
-      expiryDate: '2025-01-15',
-      duration: '12 months',
-      status: 'Active',
-      points: 450,
-      visits: 12,
-      totalSpent: 480.50,
-      lastVisit: '2024-06-10',
-      favoriteItems: ['Special Fried Rice', 'Seafood Fried Rice']
-    },
-    {
-      id: 'M002',
-      name: 'Ahmad Rahman',
-      phone: '+60198765432',
-      email: 'ahmad@email.com',
-      address: 'Petaling Jaya, Selangor',
-      joinDate: '2024-02-20',
-      expiryDate: '2025-02-20',
-      duration: '12 months',
-      status: 'Expiring Soon',
-      points: 280,
-      visits: 8,
-      totalSpent: 320.00,
-      lastVisit: '2024-06-05',
-      favoriteItems: ['Chicken Fried Rice']
-    },
-    {
-      id: 'M003',
-      name: 'Priya Sharma',
-      phone: '+60167890123',
-      email: 'priya@email.com',
-      address: 'Subang Jaya, Selangor',
-      joinDate: '2024-03-10',
-      expiryDate: '2025-09-10',
-      duration: '18 months',
-      status: 'Active',
-      points: 150,
-      visits: 5,
-      totalSpent: 180.00,
-      lastVisit: '2024-06-12',
-      favoriteItems: ['Vegetable Fried Rice', 'Tom Yam Fried Rice']
-    }
-  ]);
-
-  const [newMember, setNewMember] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-    duration: '12'
-  });
-
-
-
-  const addNewMember = () => {
-    if (newMember.name && newMember.phone) {
-      const memberId = `M${String(members.length + 1).padStart(3, '0')}`;
-      const today = new Date();
-      const expiry = new Date(today);
-      expiry.setMonth(expiry.getMonth() + parseInt(newMember.duration));
-
-      const member = {
-        id: memberId,
-        name: newMember.name,
-        phone: newMember.phone,
-        email: newMember.email,
-        address: newMember.address,
-        joinDate: today.toISOString().split('T')[0],
-        expiryDate: expiry.toISOString().split('T')[0],
-        duration: `${newMember.duration} months`,
-        status: 'Active',
-        points: 0,
-        visits: 0,
-        totalSpent: 0,
-        lastVisit: null,
-        favoriteItems: []
-      };
-
-      setMembers([...members, member]);
-      setNewMember({ name: '', phone: '', email: '', address: '', duration: '12' });
-    }
-  };
-
-  const updateMemberTier = (member) => {
-    return 'Member'; // Simple membership without tiers
-  };
-
-  const getStatusColor = (status) => {
-    switch(status) {
-      case 'Active': return 'bg-green-100 text-green-800';
-      case 'Expiring Soon': return 'bg-yellow-100 text-yellow-800';
-      case 'Expired': return 'bg-red-100 text-red-800';
-      case 'Inactive': return 'bg-gray-100 text-gray-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
-  };
-
-  const getDaysToExpiry = (expiryDate) => {
-    const today = new Date();
-    const expiry = new Date(expiryDate);
-    const diffTime = expiry - today;
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const expiringMembers = members.filter(member => {
-    const daysToExpiry = getDaysToExpiry(member.expiryDate);
-    return daysToExpiry <= 30 && daysToExpiry > 0;
-  });
-
-  const filteredMembers = members.filter(member =>
-    member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    member.phone.includes(searchTerm) ||
-    member.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  const renewMembership = (memberId, duration = 12) => {
-    setMembers(members.map(member => {
-      if (member.id === memberId) {
-        const newExpiry = new Date();
-        newExpiry.setMonth(newExpiry.getMonth() + duration);
-        return {
-          ...member,
-          expiryDate: newExpiry.toISOString().split('T')[0],
-          status: 'Active'
-        };
-      }
-      return member;
-    }));
-  };
-
-  const totalMembers = members.length;
-  const activeMembers = members.filter(m => m.status === 'Active').length;
-  const totalRevenue = members.reduce((sum, m) => sum + m.totalSpent, 0);
-  const averageSpent = totalRevenue / totalMembers;
-
-  return (
-    <div className="max-w-7xl mx-auto p-6 bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-orange-500 to-red-500 rounded-xl shadow-lg p-8 mb-6 text-white">
-        <h1 className="text-3xl font-bold mb-2">🍚 Fried Rice Shop - Membership Management</h1>
-        <p className="text-orange-100">Activate, track, and manage your customer memberships</p>
-        
-        {/* Quick Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
-          <div className="bg-white bg-opacity-20 rounded-lg p-4">
-            <div className="text-2xl font-bold">{totalMembers}</div>
-            <div className="text-sm text-orange-100">Total Members</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4">
-            <div className="text-2xl font-bold">{activeMembers}</div>
-            <div className="text-sm text-orange-100">Active Members</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4">
-            <div className="text-2xl font-bold">RM{totalRevenue.toFixed(0)}</div>
-            <div className="text-sm text-orange-100">Total Revenue</div>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg p-4">
-            <div className="text-2xl font-bold">{expiringMembers.length}</div>
-            <div className="text-sm text-orange-100">Expiring Soon</div>
-          </div>
-        </div>
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="bg-white rounded-lg shadow-md mb-6">
-        <div className="flex border-b overflow-x-auto">
-          <button
-            onClick={() => setActiveTab('activation')}
-            className={`px-6 py-3 font-medium whitespace-nowrap ${activeTab === 'activation' 
-              ? 'border-b-2 border-orange-500 text-orange-600' 
-              : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            <Users className="w-4 h-4 inline mr-2" />
-            Member Activation
-          </button>
-          <button
-            onClick={() => setActiveTab('tracking')}
-            className={`px-6 py-3 font-medium whitespace-nowrap ${activeTab === 'tracking' 
-              ? 'border-b-2 border-orange-500 text-orange-600' 
-              : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            <Calendar className="w-4 h-4 inline mr-2" />
-            Membership Tracking
-          </button>
-          <button
-            onClick={() => setActiveTab('renewals')}
-            className={`px-6 py-3 font-medium whitespace-nowrap ${activeTab === 'renewals' 
-              ? 'border-b-2 border-orange-500 text-orange-600' 
-              : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            <Bell className="w-4 h-4 inline mr-2" />
-            Renewal Alerts ({expiringMembers.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('analytics')}
-            className={`px-6 py-3 font-medium whitespace-nowrap ${activeTab === 'analytics' 
-              ? 'border-b-2 border-orange-500 text-orange-600' 
-              : 'text-gray-500 hover:text-gray-700'}`}
-          >
-            <TrendingUp className="w-4 h-4 inline mr-2" />
-            Analytics
-          </button>
-        </div>
-
-        {/* Member Activation Tab */}
-        {activeTab === 'activation' && (
-          <div className="p-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              {/* Activation Form */}
-              <div className="space-y-6">
-                <h2 className="text-xl font-bold text-gray-800">New Member Registration</h2>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Full Name *</label>
-                    <input
-                      type="text"
-                      value={newMember.name}
-                      onChange={(e) => setNewMember({...newMember, name: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="Enter customer name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Phone Number *</label>
-                    <input
-                      type="text"
-                      value={newMember.phone}
-                      onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="+60xxxxxxxxx"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Email (Optional)</label>
-                    <input
-                      type="email"
-                      value={newMember.email}
-                      onChange={(e) => setNewMember({...newMember, email: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="customer@email.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Address (Optional)</label>
-                    <input
-                      type="text"
-                      value={newMember.address}
-                      onChange={(e) => setNewMember({...newMember, address: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                      placeholder="City, State"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Membership Duration</label>
-                    <select
-                      value={newMember.duration}
-                      onChange={(e) => setNewMember({...newMember, duration: e.target.value})}
-                      className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                    >
-                      <option value="1">1 Month</option>
-                      <option value="3">3 Months</option>
-                      <option value="6">6 Months</option>
-                      <option value="12">12 Months (Most Popular)</option>
-                      <option value="18">18 Months</option>
-                      <option value="24">24 Months</option>
-                    </select>
-                  </div>
-
-                  <button
-                    onClick={addNewMember}
-                    disabled={!newMember.name || !newMember.phone}
-                    className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white py-3 px-4 rounded-lg font-medium transition-colors flex items-center justify-center"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Activate Membership
-                  </button>
-                </div>
-              </div>
-
-              {/* Basic Membership Info */}
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold text-gray-800">Membership Information</h2>
-                
-                <div className="border rounded-lg p-6 bg-orange-50">
-                  <div className="flex items-center mb-4">
-                    <Award className="w-6 h-6 text-orange-500 mr-3" />
-                    <h3 className="font-semibold text-gray-800 text-lg">Fried Rice Club Member</h3>
-                  </div>
-                  <p className="text-gray-700">
-                    Join our membership program to enjoy exclusive benefits and track your dining history with us.
-                  </p>
-                </div>
-
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-800 mb-2">💡 Duration Recommendations:</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
-                    <li><strong>12 months:</strong> Most popular, best value</li>
-                    <li><strong>6 months:</strong> Good for trying membership</li>
-                    <li><strong>24 months:</strong> Longest commitment, great for regulars</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Membership Tracking Tab */}
-        {activeTab === 'tracking' && (
-          <div className="p-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-              <h2 className="text-xl font-bold text-gray-800">All Members ({filteredMembers.length})</h2>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-3 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Search members..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
-                  />
-                </div>
-                <button className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                  <Download className="w-4 h-4 mr-2" />
-                  Export
-                </button>
-              </div>
-            </div>
-
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse bg-white rounded-lg shadow">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="p-4 text-left font-medium text-gray-700">Member</th>
-                    <th className="p-4 text-left font-medium text-gray-700">Contact</th>
-                    <th className="p-4 text-left font-medium text-gray-700">Status</th>
-                    <th className="p-4 text-left font-medium text-gray-700">Stats</th>
-                    <th className="p-4 text-left font-medium text-gray-700">Expiry</th>
-                    <th className="p-4 text-left font-medium text-gray-700">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredMembers.map((member) => {
-                    const daysToExpiry = getDaysToExpiry(member.expiryDate);
-                    const currentTier = updateMemberTier(member);
-                    return (
-                      <tr key={member.id} className="border-t hover:bg-gray-50">
-                        <td className="p-4">
-                          <div>
-                            <div className="font-medium text-gray-800">{member.name}</div>
-                            <div className="text-sm text-gray-500 font-mono">{member.id}</div>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="space-y-1">
-                            <div className="flex items-center text-sm text-gray-600">
-                              <Phone className="w-3 h-3 mr-1" />
-                              {member.phone}
-                            </div>
-                            {member.email && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <Mail className="w-3 h-3 mr-1" />
-                                {member.email}
-                              </div>
-                            )}
-                            {member.address && (
-                              <div className="flex items-center text-sm text-gray-600">
-                                <MapPin className="w-3 h-3 mr-1" />
-                                {member.address}
-                              </div>
-                            )}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(member.status)}`}>
-                            {member.status}
-                          </span>
-                        </td>
-                        <td className="p-4">
-                          <div className="space-y-1 text-sm">
-                            <div className="flex items-center">
-                              <Star className="w-3 h-3 text-yellow-500 mr-1" />
-                              {member.points} pts
-                            </div>
-                            <div>{member.visits} visits</div>
-                            <div className="font-medium">RM{member.totalSpent.toFixed(2)}</div>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="text-sm">
-                            <div className={daysToExpiry <= 30 ? 'text-orange-600 font-medium' : ''}>
-                              {member.expiryDate}
-                            </div>
-                            <div className={`text-xs ${daysToExpiry <= 30 ? 'text-orange-500' : 'text-gray-500'}`}>
-                              {daysToExpiry > 0 ? `${daysToExpiry} days left` : 'Expired'}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <div className="flex space-x-2">
-                            <button
-                              onClick={() => {
-                                setSelectedMember(member);
-                                setShowMemberDetails(true);
-                              }}
-                              className="text-blue-600 hover:text-blue-800 p-1"
-                              title="View Details"
-                            >
-                              <Edit className="w-4 h-4" />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Renewal Alerts Tab */}
-        {activeTab === 'renewals' && (
-          <div className="p-6">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold text-gray-800">Membership Renewal Alerts</h2>
-              {expiringMembers.length > 0 && (
-                <button className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                  Send All Reminders
-                </button>
-              )}
-            </div>
-            
-            {expiringMembers.length === 0 ? (
-              <div className="text-center py-12">
-                <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-800 mb-2">All Good!</h3>
-                <p className="text-gray-600">No memberships expiring in the next 30 days.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
-                  <div className="flex items-center">
-                    <AlertCircle className="w-5 h-5 text-yellow-600 mr-2" />
-                    <span className="font-medium text-yellow-800">
-                      {expiringMembers.length} membership{expiringMembers.length > 1 ? 's' : ''} expiring soon
-                    </span>
-                  </div>
-                </div>
-
-                {expiringMembers.map((member) => {
-                  const daysToExpiry = getDaysToExpiry(member.expiryDate);
-                  return (
-                    <div key={member.id} className="bg-white border border-yellow-200 rounded-lg p-6 shadow-sm">
-                      <div className="flex items-center justify-between mb-4">
-                        <div className="flex items-center space-x-4">
-                          <div className="flex-shrink-0">
-                            <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                              daysToExpiry <= 7 ? 'bg-red-100' : 'bg-yellow-100'
-                            }`}>
-                              <Clock className={`w-5 h-5 ${
-                                daysToExpiry <= 7 ? 'text-red-600' : 'text-yellow-600'
-                              }`} />
-                            </div>
-                          </div>
-                          <div>
-                            <h3 className="font-semibold text-gray-800 text-lg">{member.name}</h3>
-                            <div className="flex items-center space-x-4 text-sm text-gray-600 mt-1">
-                              <span>{member.phone}</span>
-                              <span>•</span>
-                              <span>{member.duration}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className={`text-lg font-bold ${
-                            daysToExpiry <= 7 ? 'text-red-600' : 'text-yellow-600'
-                          }`}>
-                            {daysToExpiry} days
-                          </div>
-                          <div className="text-xs text-gray-500">until expiry</div>
-                        </div>
-                      </div>
-                      
-                      <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                        <div className="grid grid-cols-3 gap-4 text-sm">
-                          <div className="text-center">
-                            <div className="font-semibold text-gray-800">{member.visits}</div>
-                            <div className="text-gray-600">Total Visits</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-semibold text-gray-800">RM{member.totalSpent.toFixed(2)}</div>
-                            <div className="text-gray-600">Total Spent</div>
-                          </div>
-                          <div className="text-center">
-                            <div className="font-semibold text-gray-800">{member.points}</div>
-                            <div className="text-gray-600">Points Balance</div>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="flex flex-wrap gap-2">
-                        <button className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                          <Bell className="w-4 h-4 mr-2" />
-                          Send Reminder
-                        </button>
-                        <button 
-                          onClick={() => renewMembership(member.id, 12)}
-                          className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-2" />
-                          Renew 12 Months
-                        </button>
-                        <button className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors flex items-center">
-                          <Gift className="w-4 h-4 mr-2" />
-                          Special Offer
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Analytics Tab */}
-        {activeTab === 'analytics' && (
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-800 mb-6">Membership Analytics</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-              {/* Key Metrics Cards */}
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white p-6 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-blue-100">Total Revenue</p>
-                    <p className="text-2xl font-bold">RM{totalRevenue.toFixed(2)}</p>
-                  </div>
-                  <TrendingUp className="w-8 h-8 text-blue-200" />
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white p-6 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-green-100">Active Rate</p>
-                    <p className="text-2xl font-bold">{((activeMembers/totalMembers)*100).toFixed(1)}%</p>
-                  </div>
-                  <Users className="w-8 h-8 text-green-200" />
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white p-6 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-purple-100">Avg. Spent</p>
-                    <p className="text-2xl font-bold">RM{averageSpent.toFixed(2)}</p>
-                  </div>
-                  <CreditCard className="w-8 h-8 text-purple-200" />
-                </div>
-              </div>
-
-              <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white p-6 rounded-lg">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-orange-100">Retention Alert</p>
-                    <p className="text-2xl font-bold">{expiringMembers.length}</p>
-                  </div>
-                  <Bell className="w-8 h-8 text-orange-200" />
-                </div>
-              </div>
-            </div>
-
-            {/* Charts and Analysis */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Membership Status */}
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Membership Status</h3>
-                <div className="space-y-3">
-                  {['Active', 'Expiring Soon', 'Expired', 'Inactive'].map(status => {
-                    const statusMembers = members.filter(m => m.status === status).length;
-                    const percentage = (statusMembers / totalMembers * 100).toFixed(1);
-                    return (
-                      <div key={status} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                            {status}
-                          </span>
-                          <span className="ml-3 text-sm text-gray-600">{statusMembers} members</span>
-                        </div>
-                        <span className="text-sm font-semibold text-gray-800">{percentage}%</span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Top Spenders */}
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Top Spenders</h3>
-                <div className="space-y-3">
-                  {members
-                    .sort((a, b) => b.totalSpent - a.totalSpent)
-                    .slice(0, 5)
-                    .map((member, index) => (
-                      <div key={member.id} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-8 h-8 bg-gradient-to-r from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center text-white text-sm font-bold">
-                            {index + 1}
-                          </div>
-                          <div className="ml-3">
-                            <div className="font-medium text-gray-800">{member.name}</div>
-                            <div className="text-xs text-gray-500">{member.visits} visits</div>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <div className="font-semibold text-gray-800">RM{member.totalSpent.toFixed(2)}</div>
-                          <div className="text-xs text-gray-500">{member.points} pts</div>
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              </div>
-
-              {/* Recent Activity */}
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activity</h3>
-                <div className="space-y-3">
-                  {members
-                    .filter(m => m.lastVisit)
-                    .sort((a, b) => new Date(b.lastVisit) - new Date(a.lastVisit))
-                    .slice(0, 5)
-                    .map(member => (
-                      <div key={member.id} className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-2 h-2 bg-green-500 rounded-full mr-3"></div>
-                          <div>
-                            <div className="font-medium text-gray-800">{member.name}</div>
-                            <div className="text-xs text-gray-500">Last visit: {member.lastVisit}</div>
-                          </div>
-                        </div>
-                        <span className="px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                          Member
-                        </span>
-                      </div>
-                    ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Member Details Modal */}
-      {showMemberDetails && selectedMember && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b">
-              <div className="flex justify-between items-center">
-                <h3 className="text-xl font-bold text-gray-800">Member Details</h3>
-                <button
-                  onClick={() => setShowMemberDetails(false)}
-                  className="text-gray-500 hover:text-gray-700"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">Personal Information</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>ID:</strong> {selectedMember.id}</div>
-                    <div><strong>Name:</strong> {selectedMember.name}</div>
-                    <div><strong>Phone:</strong> {selectedMember.phone}</div>
-                    <div><strong>Email:</strong> {selectedMember.email || 'Not provided'}</div>
-                    <div><strong>Address:</strong> {selectedMember.address || 'Not provided'}</div>
-                  </div>
-                </div>
-                
-                <div>
-                  <h4 className="font-semibold text-gray-800 mb-3">Membership Details</h4>
-                  <div className="space-y-2 text-sm">
-                    <div><strong>Join Date:</strong> {selectedMember.joinDate}</div>
-                    <div><strong>Expiry Date:</strong> {selectedMember.expiryDate}</div>
-                    <div><strong>Duration:</strong> {selectedMember.duration}</div>
-                    <div><strong>Status:</strong> 
-                      <span className={`ml-2 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(selectedMember.status)}`}>
-                        {selectedMember.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="mt-6">
-                <h4 className="font-semibold text-gray-800 mb-3">Activity Summary</h4>
-                <div className="grid grid-cols-4 gap-4 text-center">
-                  <div className="bg-blue-50 p-3 rounded-lg">
-                    <div className="font-bold text-blue-600">{selectedMember.points}</div>
-                    <div className="text-xs text-blue-600">Points</div>
-                  </div>
-                  <div className="bg-green-50 p-3 rounded-lg">
-                    <div className="font-bold text-green-600">{selectedMember.visits}</div>
-                    <div className="text-xs text-green-600">Visits</div>
-                  </div>
-                  <div className="bg-purple-50 p-3 rounded-lg">
-                    <div className="font-bold text-purple-600">RM{selectedMember.totalSpent.toFixed(2)}</div>
-                    <div className="text-xs text-purple-600">Total Spent</div>
-                  </div>
-                  <div className="bg-orange-50 p-3 rounded-lg">
-                    <div className="font-bold text-orange-600">{selectedMember.lastVisit || 'Never'}</div>
-                    <div className="text-xs text-orange-600">Last Visit</div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="p-6 border-t bg-gray-50">
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowMemberDetails(false)}
-                  className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  Close
-                </button>
-                <button className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
-                  Edit Member
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1+1.5 KeyClub Members Management</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 50;
+        }
+        .modal-overlay.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        .tab-button {
+            transition: all 0.2s;
+        }
+        .tab-button.active {
+            background-color: rgb(243, 232, 255);
+            color: rgb(147, 51, 234);
+        }
+        .tab-button:not(.active):hover {
+            background-color: rgb(243, 244, 246);
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <!-- Header -->
+    <div class="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-4 shadow-lg">
+        <h1 class="text-2xl font-bold">1+1.5 KeyClub Members</h1>
+        <p class="text-sm opacity-90">Member Management System</p>
     </div>
-  );
-};
 
-export default MembershipManagementSystem;
+    <!-- Navigation -->
+    <div class="bg-white shadow-sm">
+        <div class="flex space-x-6 p-4">
+            <button onclick="showTab('dashboard')" class="tab-button active flex items-center space-x-2 px-4 py-2 rounded-lg" id="dashboard-tab">
+                <i data-lucide="trending-up"></i>
+                <span>Dashboard</span>
+            </button>
+            <button onclick="showTab('members')" class="tab-button flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600" id="members-tab">
+                <i data-lucide="users"></i>
+                <span>Members</span>
+            </button>
+            <button onclick="showTab('analysis')" class="tab-button flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600" id="analysis-tab">
+                <i data-lucide="bar-chart-3"></i>
+                <span>Analysis</span>
+            </button>
+            <button onclick="showTab('alerts')" class="tab-button flex items-center space-x-2 px-4 py-2 rounded-lg text-gray-600" id="alerts-tab">
+                <i data-lucide="bell"></i>
+                <span>Alerts</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6">
+        <!-- Dashboard Tab -->
+        <div id="dashboard-content" class="tab-content">
+            <h2 class="text-xl font-bold mb-6">Daily Summary</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">New Members Today</p>
+                            <p class="text-2xl font-bold text-green-600" id="new-members-count">3</p>
+                        </div>
+                        <i data-lucide="user-plus" class="text-green-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Total Collection</p>
+                            <p class="text-2xl font-bold text-blue-600" id="total-collection">RM450</p>
+                        </div>
+                        <i data-lucide="dollar-sign" class="text-blue-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-orange-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Expiring Today</p>
+                            <p class="text-2xl font-bold text-orange-600" id="expiring-today">1</p>
+                        </div>
+                        <i data-lucide="clock" class="text-orange-500"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-sm text-gray-600">Active Members</p>
+                            <p class="text-2xl font-bold text-purple-600" id="active-members">2</p>
+                        </div>
+                        <i data-lucide="users" class="text-purple-500"></i>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-6 rounded-lg shadow-sm">
+                <h3 class="text-lg font-semibold mb-4">Member Benefits</h3>
+                <div class="space-y-3">
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="gift" class="text-purple-500"></i>
+                        <span>RM1 only for 1 plate fried rice</span>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <i data-lucide="user-plus" class="text-green-500"></i>
+                        <span>Introduce 3 members = Prolong membership 1 week</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Members Tab -->
+        <div id="members-content" class="tab-content hidden">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-xl font-bold">Members Management</h2>
+                <button onclick="showAddMemberModal()" class="bg-purple-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 hover:bg-purple-700 transition-colors">
+                    <i data-lucide="plus"></i>
+                    <span>Add Member</span>
+                </button>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-sm overflow-hidden">
+                <table class="w-full">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Member</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Branch</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Duration</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Referrals</th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="members-table" class="divide-y divide-gray-200">
+                        <!-- Members will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Analysis Tab -->
+        <div id="analysis-content" class="tab-content hidden">
+            <h2 class="text-xl font-bold mb-6">Member Analysis</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-blue-500">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Total Members</h3>
+                    <p class="text-3xl font-bold text-blue-600" id="analysis-total-members">4</p>
+                    <p class="text-sm text-gray-500 mt-1" id="analysis-active-members">2 Active</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-green-500">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Total Revenue</h3>
+                    <p class="text-3xl font-bold text-green-600" id="analysis-total-revenue">RM440</p>
+                    <p class="text-sm text-gray-500 mt-1">All time earnings</p>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm border-l-4 border-purple-500">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-2">Avg. Revenue</h3>
+                    <p class="text-3xl font-bold text-purple-600" id="analysis-avg-revenue">RM110</p>
+                    <p class="text-sm text-gray-500 mt-1">Per member</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Members by Branch</h3>
+                    <div id="branch-analysis" class="space-y-3">
+                        <!-- Branch analysis will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h3 class="text-lg font-semibold mb-4">Revenue by Branch</h3>
+                    <div id="revenue-analysis" class="space-y-3">
+                        <!-- Revenue analysis will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts Tab -->
+        <div id="alerts-content" class="tab-content hidden">
+            <h2 class="text-xl font-bold mb-6">Membership Alerts</h2>
+            <div id="alerts-list" class="space-y-4">
+                <!-- Alerts will be populated by JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Member Modal -->
+    <div id="add-member-modal" class="modal-overlay">
+        <div class="bg-white rounded-lg p-6 w-full max-w-md">
+            <h3 class="text-lg font-semibold mb-4">Add New Member</h3>
+            
+            <div class="space-y-4">
+                <input type="text" id="member-name" placeholder="Full Name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <input type="email" id="member-email" placeholder="Email" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <input type="tel" id="member-phone" placeholder="Phone Number" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <input type="text" id="member-branch" placeholder="Branch Name" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                <select id="member-duration" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent">
+                    <option value="1 month">1 month - RM30</option>
+                    <option value="3 months">3 months - RM80</option>
+                    <option value="6 months">6 months - RM150</option>
+                    <option value="1 year">1 year - RM280</option>
+                </select>
+            </div>
+            
+            <div class="flex space-x-3 mt-6">
+                <button onclick="hideAddMemberModal()" class="flex-1 py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                <button onclick="addMember()" class="flex-1 py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Add Member</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Member Card Modal -->
+    <div id="member-card-modal" class="modal-overlay">
+        <div class="bg-white rounded-lg p-6 max-w-sm w-full">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold">Member Card</h3>
+                <button onclick="hideMemberCardModal()" class="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            
+            <div id="member-card-content">
+                <!-- Member card will be populated by JavaScript -->
+            </div>
+            
+            <div class="mt-4 space-y-2">
+                <button class="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">Download Card</button>
+                <button class="w-full py-2 px-4 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">Send via WhatsApp</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Sample data
+        let members = [
+            {
+                id: 1,
+                name: 'John Tan',
+                email: 'john@email.com',
+                phone: '+60123456789',
+                branch: 'Petaling Jaya',
+                joinDate: '2025-06-01',
+                expiryDate: '2025-12-01',
+                duration: '6 months',
+                status: 'Active',
+                referrals: 2,
+                qrCode: 'KC001'
+            },
+            {
+                id: 2,
+                name: 'Sarah Lee',
+                email: 'sarah@email.com',
+                phone: '+60198765432',
+                branch: 'Shah Alam',
+                joinDate: '2025-05-15',
+                expiryDate: '2025-06-15',
+                duration: '1 month',
+                status: 'Expiring Soon',
+                referrals: 1,
+                qrCode: 'KC002'
+            },
+            {
+                id: 3,
+                name: 'Ahmad Rahman',
+                email: 'ahmad@email.com',
+                phone: '+60187654321',
+                branch: 'Petaling Jaya',
+                joinDate: '2025-06-10',
+                expiryDate: '2025-09-10',
+                duration: '3 months',
+                status: 'Active',
+                referrals: 0,
+                qrCode: 'KC003'
+            },
+            {
+                id: 4,
+                name: 'Lisa Wong',
+                email: 'lisa@email.com',
+                phone: '+60176543210',
+                branch: 'Shah Alam',
+                joinDate: '2025-04-01',
+                expiryDate: '2025-06-01',
+                duration: '1 month',
+                status: 'Inactive',
+                referrals: 3,
+                qrCode: 'KC004'
+            }
+        ];
+
+        const durationPrices = {
+            '1 month': 30,
+            '3 months': 80,
+            '6 months': 150,
+            '1 year': 280
+        };
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            lucide.createIcons();
+            updateDashboard();
+            updateMembersTable();
+            updateAnalysis();
+            updateAlerts();
+        });
+
+        // Tab switching
+        function showTab(tabName) {
+            // Hide all content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.tab-button').forEach(tab => {
+                tab.classList.remove('active');
+                tab.classList.add('text-gray-600');
+            });
+            
+            // Show selected content
+            document.getElementById(tabName + '-content').classList.remove('hidden');
+            
+            // Add active class to selected tab
+            const activeTab = document.getElementById(tabName + '-tab');
+            activeTab.classList.add('active');
+            activeTab.classList.remove('text-gray-600');
+        }
+
+        // Update dashboard stats
+        function updateDashboard() {
+            const activeMembers = members.filter(m => m.status === 'Active').length;
+            const totalRevenue = members.reduce((sum, member) => {
+                return sum + (durationPrices[member.duration] || 0);
+            }, 0);
+            
+            document.getElementById('active-members').textContent = activeMembers;
+            document.getElementById('total-collection').textContent = `RM${totalRevenue}`;
+        }
+
+        // Update members table
+        function updateMembersTable() {
+            const tbody = document.getElementById('members-table');
+            tbody.innerHTML = '';
+            
+            members.forEach(member => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td class="px-6 py-4">
+                        <div>
+                            <div class="font-medium text-gray-900">${member.name}</div>
+                            <div class="text-sm text-gray-500">${member.email}</div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex items-center space-x-1">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i>
+                            <span class="text-sm text-gray-900">${member.branch}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">${member.duration}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-1 text-xs rounded-full ${getStatusClass(member.status)}">
+                            ${member.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-gray-900">
+                        ${member.referrals}/3
+                        ${member.referrals >= 3 ? '<span class="ml-2 text-xs bg-green-100 text-green-800 px-2 py-1 rounded">+1 week earned</span>' : ''}
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="flex space-x-2">
+                            <button onclick="showMemberCard(${member.id})" class="text-purple-600 hover:text-purple-800 flex items-center space-x-1">
+                                <i data-lucide="qr-code" class="w-4 h-4"></i>
+                                <span class="text-sm">Card</span>
+                            </button>
+                            <button onclick="toggleMemberStatus(${member.id})" class="text-orange-600 hover:text-orange-800 flex items-center space-x-1">
+                                <i data-lucide="user-x" class="w-4 h-4"></i>
+                                <span class="text-sm">${member.status === 'Active' ? 'Deactivate' : 'Activate'}</span>
+                            </button>
+                            <button onclick="deleteMember(${member.id})" class="text-red-600 hover:text-red-800 flex items-center space-x-1">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                <span class="text-sm">Delete</span>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            // Re-create icons after updating DOM
+            lucide.createIcons();
+        }
+
+        function getStatusClass(status) {
+            switch(status) {
+                case 'Active': return 'bg-green-100 text-green-800';
+                case 'Expiring Soon': return 'bg-orange-100 text-orange-800';
+                case 'Inactive': return 'bg-red-100 text-red-800';
+                default: return 'bg-gray-100 text-gray-800';
+            }
+        }
+
+        // Update analysis
+        function updateAnalysis() {
+            const totalMembers = members.length;
+            const activeMembers = members.filter(m => m.status === 'Active').length;
+            const totalRevenue = members.reduce((sum, member) => {
+                return sum + (durationPrices[member.duration] || 0);
+            }, 0);
+            
+            document.getElementById('analysis-total-members').textContent = totalMembers;
+            document.getElementById('analysis-active-members').textContent = `${activeMembers} Active`;
+            document.getElementById('analysis-total-revenue').textContent = `RM${totalRevenue}`;
+            document.getElementById('analysis-avg-revenue').textContent = `RM${Math.round(totalRevenue / totalMembers)}`;
+            
+            // Branch analysis
+            const branchStats = {};
+            const branchRevenue = {};
+            members.forEach(member => {
+                branchStats[member.branch] = (branchStats[member.branch] || 0) + 1;
+                branchRevenue[member.branch] = (branchRevenue[member.branch] || 0) + (durationPrices[member.duration] || 0);
+            });
+            
+            // Update branch analysis
+            const branchAnalysisDiv = document.getElementById('branch-analysis');
+            branchAnalysisDiv.innerHTML = '';
+            Object.entries(branchStats).forEach(([branch, count]) => {
+                const percentage = Math.round((count / totalMembers) * 100);
+                branchAnalysisDiv.innerHTML += `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i>
+                            <span class="font-medium">${branch}</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm text-gray-600">${count} members</span>
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                <div class="bg-purple-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold text-purple-600">${percentage}%</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Update revenue analysis
+            const revenueAnalysisDiv = document.getElementById('revenue-analysis');
+            revenueAnalysisDiv.innerHTML = '';
+            Object.entries(branchRevenue).forEach(([branch, revenue]) => {
+                const percentage = Math.round((revenue / totalRevenue) * 100);
+                revenueAnalysisDiv.innerHTML += `
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="dollar-sign" class="w-4 h-4 text-gray-400"></i>
+                            <span class="font-medium">${branch}</span>
+                        </div>
+                        <div class="flex items-center space-x-3">
+                            <span class="text-sm text-gray-600">RM${revenue}</span>
+                            <div class="w-20 bg-gray-200 rounded-full h-2">
+                                <div class="bg-green-600 h-2 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                            <span class="text-sm font-semibold text-green-600">${percentage}%</span>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Re-create icons
+            lucide.createIcons();
+        }
+
+        // Update alerts
+        function updateAlerts() {
+            const alertsList = document.getElementById('alerts-list');
+            alertsList.innerHTML = '';
+            
+            const today = new Date();
+            const expiringMembers = members.filter(member => {
+                const expiryDate = new Date(member.expiryDate);
+                const diffTime = expiryDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= 7 && diffDays >= 0;
+            });
+            
+            expiringMembers.forEach(member => {
+                const expiryDate = new Date(member.expiryDate);
+                const diffTime = expiryDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                
+                alertsList.innerHTML += `
+                    <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-orange-500">
+                        <div class="flex justify-between items-center">
+                            <div>
+                                <h3 class="font-semibold text-gray-900">${member.name}</h3>
+                                <p class="text-sm text-gray-600">Membership expires in ${diffDays} days</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-sm text-gray-500">Expires: ${expiryDate.toLocaleDateString()}</p>
+                                <button class="text-purple-600 text-sm hover:underline">Send Reminder</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            if (expiringMembers.length === 0) {
+                alertsList.innerHTML = '<p class="text-gray-500 text-center py-8">No expiring memberships in the next 7 days.</p>';
+            }
+        }
+
+        // Modal functions
+        function showAddMemberModal() {
+            document.getElementById('add-member-modal').classList.add('active');
+        }
+
+        function hideAddMemberModal() {
+            document.getElementById('add-member-modal').classList.remove('active');
+            // Clear form
+            document.getElementById('member-name').value = '';
+            document.getElementById('member-email').value = '';
+            document.getElementById('member-phone').value = '';
+            document.getElementById('member-branch').value = '';
+            document.getElementById('member-duration').value = '1 month';
+        }
+
+        function addMember() {
+            const name = document.getElementById('member-name').value;
+            const email = document.getElementById('member-email').value;
+            const phone = document.getElementById('member-phone').value;
+            const branch = document.getElementById('member-branch').value;
+            const duration = document.getElementById('member-duration').value;
+            
+            if (name && email && phone && branch) {
+                const joinDate = new Date();
+                const expiryDate = new Date();
+                
+                switch(duration) {
+                    case '1 month': expiryDate.setMonth(expiryDate.getMonth() + 1); break;
+                    case '3 months': expiryDate.setMonth(expiryDate.getMonth() + 3); break;
+                    case '6 months': expiryDate.setMonth(expiryDate.getMonth() + 6); break;
+                    case '1 year': expiryDate.setFullYear(expiryDate.getFullYear() + 1); break;
+                }
+                
+                const newMember = {
+                    id: members.length + 1,
+                    name,
+                    email,
+                    phone,
+                    branch,
+                    duration,
+                    joinDate: joinDate.toISOString().split('T')[0],
+                    expiryDate: expiryDate.toISOString().split('T')[0],
+                    status: 'Active',
+                    referrals: 0,
+                    qrCode: `KC${String(members.length + 1).padStart(3, '0')}`
+                };
+                
+                members.push(newMember);
+                updateDashboard();
+                updateMembersTable();
+                updateAnalysis();
+                updateAlerts();
+                hideAddMemberModal();
+            }
+        }
+
+        function showMemberCard(memberId) {
+            const member = members.find(m => m.id === memberId);
+            if (member) {
+                const cardContent = document.getElementById('member-card-content');
+                cardContent.innerHTML = `
+                    <div class="bg-gradient-to-br from-purple-600 via-pink-500 to-orange-400 p-6 rounded-2xl text-white shadow-2xl">
+                        <div class="flex justify-between items-start mb-4">
+                            <div>
+                                <h3 class="text-xl font-bold">1+1.5 KeyClub</h3>
+                                <p class="text-sm opacity-90">Premium Member</p>
+                            </div>
+                            <div class="bg-white/20 p-2 rounded-lg">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${member.qrCode}" alt="QR Code" class="w-12 h-12">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4
